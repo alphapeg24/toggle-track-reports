@@ -1,35 +1,34 @@
 import os
-from datetime import datetime
-
+import json
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
-from google.auth import default
-
+from datetime import datetime
 
 def main():
+    token_json = os.environ["GOOGLE_DRIVE_TOKEN"]
     folder_id = os.environ["DRIVE_FOLDER_ID"]
 
-    creds, _ = default(scopes=["https://www.googleapis.com/auth/drive.file"])
+    creds = Credentials.from_authorized_user_info(json.loads(token_json))
     drive = build("drive", "v3", credentials=creds)
 
-    content = f"Hello from GitHub Actions!\n{datetime.now().isoformat()}\n".encode("utf-8")
-    media = MediaInMemoryUpload(content, mimetype="text/plain")
+    content = f"Hello from GitHub OAuth!\n{datetime.now().isoformat()}".encode("utf-8")
 
     file_metadata = {
-        "name": "gh-actions-test.txt",
+        "name": "oauth-test.txt",
         "parents": [folder_id],
     }
 
-    created = drive.files().create(
+    media = MediaInMemoryUpload(content, mimetype="text/plain")
+
+    file = drive.files().create(
         body=file_metadata,
         media_body=media,
-        fields="id, name, webViewLink",
+        fields="id, name, webViewLink"
     ).execute()
 
-    print("Uploaded:", created["name"])
-    print("File ID:", created["id"])
-    print("Link:", created.get("webViewLink"))
-
+    print("Uploaded:", file["name"])
+    print("Link:", file["webViewLink"])
 
 if __name__ == "__main__":
     main()
