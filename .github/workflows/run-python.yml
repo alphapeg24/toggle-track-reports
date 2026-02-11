@@ -30,10 +30,12 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
+          pip install requests google-api-python-client google-auth google-auth-oauthlib
 
       - name: Run script
         env:
           GOOGLE_DRIVE_TOKEN: ${{ secrets.GOOGLE_DRIVE_TOKEN }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          TOGGL_API_TOKEN: ${{ secrets.TOGGL_API_TOKEN }}
+          TOGGL_WORKSPACE_ID: ${{ secrets.TOGGL_WORKSPACE_ID }}
         run: python main.py
