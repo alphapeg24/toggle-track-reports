@@ -179,8 +179,9 @@ def main():
 
     # Optional
     folder_id = os.environ.get("DRIVE_FOLDER_ID")  # My Drive 内フォルダ推奨（未指定なら直下）
-    write_daily = env_bool("WRITE_DAILY_COPY", True)
-
+    #write_daily = env_bool("WRITE_DAILY_COPY", True)
+    write_daily = False
+  
     start_date, end_date = resolve_date_range()
 
     print(f"[INFO] Fetching Toggl CSV: workspace={workspace_id}, range={start_date}..{end_date}")
@@ -194,6 +195,9 @@ def main():
 
     print("[INFO] Building Drive client (ADC via WIF)")
     drive = get_drive_service_from_adc()
+    about = drive.about().get(fields="user(emailAddress),storageQuota").execute()
+    print("[DEBUG] Drive user:", about.get("user"))
+    print("[DEBUG] Drive storageQuota:", about.get("storageQuota"))
 
     # 1) latest（固定名で上書き）
     latest_name = "toggl_time_entries_latest"
