@@ -22,7 +22,11 @@ jobs:
           workload_identity_provider: 'projects/316012052764/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
           service_account: 'toggl-drive-uploader@toggl-to-drive-automation.iam.gserviceaccount.com'
           token_format: 'access_token'
-          access_token_scopes: 'https://www.googleapis.com/auth/cloud-platform'
+          access_token_scopes: |
+            https://www.googleapis.com/auth/drive
+            https://www.googleapis.com/auth/spreadsheets
+          create_credentials_file: true
+          export_environment_variables: true
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -32,7 +36,7 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install requests google-api-python-client google-auth google-auth-oauthlib
+          pip install requests google-api-python-client google-auth google-auth-oauthlib google-auth-httplib2
 
       - name: Run script
         env:
