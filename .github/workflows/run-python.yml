@@ -40,8 +40,12 @@ jobs:
 
       - name: Run script
         env:
-          GOOGLE_DRIVE_TOKEN: ${{ secrets.GOOGLE_DRIVE_TOKEN }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
           TOGGL_API_TOKEN: ${{ secrets.TOGGL_API_TOKEN }}
           TOGGL_WORKSPACE_ID: ${{ secrets.TOGGL_WORKSPACE_ID }}
+          # 任意：必要なら Secrets に入れて使う
+          # START_DATE: ${{ secrets.START_DATE }}
+          # END_DATE: ${{ secrets.END_DATE }}
+          # DAYS: ${{ secrets.DAYS }}
+          # WRITE_DAILY_COPY: ${{ secrets.WRITE_DAILY_COPY }}
         run: python main.py
