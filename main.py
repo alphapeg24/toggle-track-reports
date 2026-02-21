@@ -7,12 +7,16 @@ Toggl → (CSV) → Google Drive に「Googleスプレッドシート」とし�
 必要な環境変数（GitHub Secrets推奨）
 - TOGGL_API_TOKEN        : Toggl API token
 - TOGGL_WORKSPACE_ID     : Toggl workspace id
-- GOOGLE_DRIVE_TOKEN     : creds.to_json() の全文（OAuthで取得したトークンJSON）
 - DRIVE_FOLDER_ID        : （任意）保存先フォルダID（マイドライブ内フォルダ推奨）
 - START_DATE             : （任意）YYYY-MM-DD
 - END_DATE               : （任意）YYYY-MM-DD
 - DAYS                   : （任意）START/END未指定の場合の過去日数（例：90）
-- WRITE_DAILY_COPY        : （任意）"true"で日付版も作成（デフォルトtrue）
+- WRITE_DAILY_COPY       : （任意）"true"で日付版も作成（デフォルトtrue）
+
+認証（重要）
+- GitHub Actions で google-github-actions/auth@v2 (WIF) を使い、
+  create_credentials_file: true / export_environment_variables: true を有効にしておくこと。
+- 本スクリプトは google.auth.default() (ADC) で認証情報を取得します。
 """
 
 import os
@@ -21,8 +25,7 @@ import datetime as dt
 from typing import Optional
 
 import requests
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
+import google.auth
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
 
@@ -93,19 +96,17 @@ def fetch_toggl_csv(
 
 
 # ----------------------------
-# Google Drive (OAuth) service
+# Google Drive (ADC via WIF) service
 # ----------------------------
-def get_drive_service_from_token_json(token_json_str: str):
+def get_drive_service_from_adc():
     """
-    token_json_str: creds.to_json() の全文（GOOGLE_DRIVE_TOKEN）
+    GitHub Actions の WIF (google-github-actions/auth) が作った ADC を使って Drive client を作る。
     """
-    info = json.loads(token_json_str)
-    creds = Credentials.from_authorized_user_info(info)
-
-    # 期限切れなら refresh_token で更新（refresh_tokenが無いと更新不可）
-    if creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-
+    scopes = [
+        "https://www.googleapis.com/auth/drive",
+        "https://www.googleapis.com/auth/spreadsheets",
+    ]
+    creds, _ = google.auth.default(scopes=scopes)
     return build("drive", "v3", credentials=creds)
 
 
@@ -175,7 +176,6 @@ def main():
     # Required
     toggl_api_token = require_env("TOGGL_API_TOKEN")
     workspace_id = require_env("TOGGL_WORKSPACE_ID")
-    drive_token_json = require_env("GOOGLE_DRIVE_TOKEN")
 
     # Optional
     folder_id = os.environ.get("DRIVE_FOLDER_ID")  # My Drive 内フォルダ推奨（未指定なら直下）
@@ -192,8 +192,8 @@ def main():
     )
     print(f"[INFO] CSV bytes: {len(csv_bytes)}")
 
-    print("[INFO] Building Drive client (OAuth)")
-    drive = get_drive_service_from_token_json(drive_token_json)
+    print("[INFO] Building Drive client (ADC via WIF)")
+    drive = get_drive_service_from_adc()
 
     # 1) latest（固定名で上書き）
     latest_name = "toggl_time_entries_latest"
